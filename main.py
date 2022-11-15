@@ -9,9 +9,13 @@ bot = telebot.TeleBot(conf.bot_token)
 # Старт бота/приветствие пользователя
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "Добрый день! На данный момент бот находится в разработке, многие команды "
-                                      "недоступны.")
-    print(message.chat.id)
+    bot.send_message(message.chat.id, "Доброго времени суток! Данный бот предназначен для заказа продукции в "
+                                      "\"Министерстве печати и штампов\".\nВы можете ознакомится с нашей продукцией "
+                                      "при помощи команды \n/makets\nДля того, чтобы узнать какие необходимы документы "
+                                      "для заказа, Вы можете использовать команду \n/documents\nДля того, чтобы узнать "
+                                      "где расположены наши офисы, Вы можете ввести \n/address\n\nПосле того, "
+                                      "как вы выбрали товар и узнали все необходимые документы, Вы можете сделать "
+                                      "заказ, при помощи команды /order")
 
 
 # Бот отправялет картинку со списком документов
@@ -67,9 +71,9 @@ def print_address(message):
     photo_address_1 = open("images/address/Офис на Чернышевского.png", "rb")
     photo_address_2 = open("./images/address/Офис на Адмиралтейской.png", "rb")
     photo_address_3 = open("./images/address/Офис на Кирова.png", "rb")
-    bot.send_photo(message.chat.id, photo_address_1)
-    bot.send_photo(message.chat.id, photo_address_2)
-    bot.send_photo(message.chat.id, photo_address_3)
+    bot.send_photo(message.chat.id, photo_address_1, caption="Телефон:\n+79881734585\n\nПочта: 434585@gmail.com")
+    bot.send_photo(message.chat.id, photo_address_2, caption="Телефон:\n+79881724535\n\nПочта: t424535@gmail.com")
+    bot.send_photo(message.chat.id, photo_address_3, caption="Телефон:\n+79881734535\n\nПочта: t434535@gmail.com")
     photo_address_1.close()
     photo_address_2.close()
     photo_address_3.close()
@@ -79,8 +83,8 @@ def print_address(message):
 def make_order(message):
     msg = bot.send_message(message.chat.id,
                            "Вы уверены, что готовы сделать заказ? Перед началом рекомендуем ознакомится с макетами и "
-                           "всеми необходимыми документами при помощи следующих команд:\n /документы - выводит список"
-                           " всех необходимых документов \n/макеты - выводит набор макетов\n\nВ ответе указать \"Да\""
+                           "всеми необходимыми документами при помощи следующих команд:\n /documents - выводит список"
+                           " всех необходимых документов \n/makets - выводит набор макетов\n\nВ ответе указать \"Да\""
                            " или \"Нет\"")
     bot.register_next_step_handler(msg, check_answer)
 
@@ -99,7 +103,7 @@ def begin_order(message):
 
 def get_name(message):
     if message.content_type == "text":
-        bot.forward_message(5039866489, message.chat.id, message.id)  # ОТПРАВКА ИМЕНИ В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА ИМЕНИ В ДРУГОЙ ЧАТ
         msg = bot.send_message(message.chat.id, "Введите номер телефона, чтобы наши сотрудники могли с вами связаться, "
                                                 "если возникнут вопросы")
         bot.register_next_step_handler(msg, get_phone_number)
@@ -111,7 +115,7 @@ def get_name(message):
 def get_phone_number(message):
     if message.content_type == "text" and (
             re.fullmatch(r'[0-9]{11}', message.text) or re.fullmatch(r'\+[0-9]{11}', message.text)):
-        print(message.text)  # ОТПРАВКА НОМЕРА ТЕЛЕФОНА В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА НОМЕРА ТЕЛЕФОНА В ДРУГОЙ ЧАТ
         msg = bot.send_message(message.chat.id, "Какую печать Вы выбрали? \n\nНеобходимо написать только название "
                                                 "печати, например, И-40 К-6 В-12 О-40")
         bot.register_next_step_handler(msg, get_print_type)
@@ -123,7 +127,7 @@ def get_phone_number(message):
 def get_print_type(message):
     if message.content_type == "text" and re.fullmatch(r'([А-Я][А-Я]-\d\d)|([А-Я]-\d\d)|([А-Я]-\d)|([А-Я][А-Я]-\d)',
                                                        message.text):
-        print(message.text)  # ОТПРАВКА ПЕЧАТИ В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА ПЕЧАТИ В ДРУГОЙ ЧАТ
         msg = bot.send_message(message.chat.id, "Прикрепите нужные документы.")
         bot.register_next_step_handler(msg, get_photo)
     else:
@@ -133,7 +137,7 @@ def get_print_type(message):
 
 def get_photo(message):
     if message.content_type == "photo":
-        print("Photo delivered!")  # ОТПРАВКА ФОТО В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА ФОТО В ДРУГОЙ ЧАТ
         msg = bot.send_message(message.chat.id, "Введите адрес получения изделия \n\nНеобходимо указать только улицу, "
                                                 "например, Адмиралтейская, Чернышевского, Кирова")
         bot.register_next_step_handler(msg, get_address)
@@ -144,7 +148,7 @@ def get_photo(message):
 
 def get_address(message):
     if message.content_type == "text" and re.fullmatch(r"Адмиралтейская|Кирова|Чернышевского", message.text):
-        print(message.text)  # ОТПРАВКА АДРЕСА В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА АДРЕСА В ДРУГОЙ ЧАТ
         msg = bot.send_message(message.chat.id, "Вы можете написать свои дополнения к заказу. Если нечего дополнить, "
                                                 "напишите -")
         bot.register_next_step_handler(msg, get_addition)
@@ -155,10 +159,9 @@ def get_address(message):
 
 def get_addition(message):
     if message.content_type == "text":
-        print(message.text)  # ОТПРАВКА ДОПОЛНЕНИЙ В ДРУГОЙ ЧАТ
+        bot.forward_message(conf.resender, message.chat.id, message.id)  # ОТПРАВКА ДОПОЛНЕНИЙ В ДРУГОЙ ЧАТ
         bot.send_message(message.chat.id, "Спасибо за заказ! В ближайшее время наш сотрудник с вами свяжется, "
                                           "чтобы уточнить детали.")
 
 
 bot.infinity_polling()
-
